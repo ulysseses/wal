@@ -6,16 +6,24 @@
 //
 // A write may be pending in user-space buffers or the page cache. It must be synced to disk for
 // it to be made durable. There are multiple ways to do this, though they make a trade-off between
-// the level of durability and performance.
-// 1. Sync after every write. This is the slowest option but offers the strongest durability.
-// 2. Sync after N writes, where N is the batch size. This is faster since it calls sync less
-// frequently, but you can lose at most N writes. However, if < N writes come in, there must
-// be a mechanism to force-sync the batch at some point even though it hasn't reached N yet.
-// 3. Sync at a regular T interval, where T is a time interval.  This is faster since it calls
-// sync less frequently, but you can lose un-synced writes. Another downside is that you
-//  must find an appropriate interval, dynamically/adaptively or via manual tuning.
-// 4. Don't force sync. This is the fastest but most dangerous: the OS will asynchronously write
-// to disk (i.e. choose when to flush the dirty page back to disk).
+// the level of durability and performance:
+//
+//  1. Sync after every write. This is the slowest option but offers the
+//  strongest durability.
+//
+//  2. Sync after N writes, where N is the batch size. This is faster since it
+//  calls sync less frequently, but you can lose at most N writes. However, if
+//  < N writes come in, there must be a mechanism to force-sync the batch at
+//  some point even though it hasn't reached N yet.
+//
+//  3. Sync at a regular T interval, where T is a time interval. This is faster
+//  since it calls sync less frequently, but you can lose un-synced writes.
+//  Another downside is that you must find an appropriate interval,
+//  dynamically/adaptively or via manual tuning.
+//
+//  4. Don't force sync. This is the fastest but most dangerous: the OS will
+//  asynchronously write to disk (i.e. choose when to flush the dirty page back
+//  to disk).
 //
 // WAL is agnostic and lets the user decide which strategy is appropriate: call Write() and
 // Sync() as one pleases.
