@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-func preallocExtend(f *os.File, sizeInBytes uint64) error {
+func preallocExtend(f *os.File, sizeInBytes int64) error {
 	// use mode = 0 to change size
 	err := syscall.Fallocate(int(f.Fd()), 0, 0, sizeInBytes)
 	if err != nil {
