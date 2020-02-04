@@ -119,6 +119,11 @@ func encodeFrameSize(nBytes uint32) (lenField uint64, padLen uint8) {
 	return
 }
 
+func frameSize(dataLen int) int {
+	padLen := 8 - (dataLen % 8)
+	return 8 + 4 + dataLen + padLen
+}
+
 type deframer struct {
 	r           io.Reader
 	crc         hash.Hash32

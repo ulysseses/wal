@@ -101,7 +101,16 @@ func (wal *WAL) Write(data []byte) (n int, err error) {
 	if err == nil {
 		wal.lastInd++ // keep lastInd up to date
 	}
-	return n, err
+	return
+}
+
+// writeNoCut writes, but does not perform any auto-cutting procedure.
+func (wal *WAL) writeNoCut(data []byte) (n int, err error) {
+	n, err = wal.scratchRW.frame(data)
+	if err == nil {
+		wal.lastInd++ // keep lastInd up to date
+	}
+	return
 }
 
 // Sync persists accumulated writes from both the user-land buffer and kernel page cache to disk.
@@ -171,13 +180,17 @@ func OpenWAL(dir string, sizeHint int, logger *zap.Logger) (*WAL, error) {
 		if err := os.Mkdir(dir, privateDirMode); err != nil {
 			return nil, err
 		}
-		logger.Info("created WAL directory", zap.String("dir", dir))
+		if logger != nil {
+			logger.Info("created WAL directory", zap.String("dir", dir))
+		}
 	}
 	if _, err := os.Stat(scratchDir(dir)); os.IsNotExist(err) {
 		if err := os.Mkdir(scratchDir(dir), privateDirMode); err != nil {
 			return nil, err
 		}
-		logger.Info("created WAL scratch directory", zap.String("dir", scratchDir(dir)))
+		if logger != nil {
+			logger.Info("created WAL scratch directory", zap.String("dir", scratchDir(dir)))
+		}
 	}
 
 	pubSegs, scratch, err := findSegments(dir, sizeHint)
@@ -231,7 +244,9 @@ func OpenWAL(dir string, sizeHint int, logger *zap.Logger) (*WAL, error) {
 		// 1. the scratch segment file was preallocated but unfinished
 		// 2. there was data corruption
 		// In both cases, we should just truncate there and continue on.
-		wal.logger.Warn("checksum error", zap.Error(err))
+		if wal.logger != nil {
+			wal.logger.Warn("checksum error", zap.Error(err))
+		}
 	} else if err != nil {
 		return nil, err
 	}
